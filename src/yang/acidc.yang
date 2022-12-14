@@ -1,0 +1,113 @@
+module acidc {
+
+    yang-version 1.1;
+    namespace "http://btsgrp.com/acidc";
+    prefix acidc;
+
+    import ietf-inet-types {
+        prefix inet;
+    }
+    import tailf-common {
+        prefix tailf;
+    }
+    import tailf-ncs {
+        prefix ncs;
+    }
+
+    description
+      "ACI Scalability Package.";
+
+    revision 2016-01-01 {
+        description
+          "Initial revision.";
+    }
+
+    typedef host {
+        type union {
+            type inet:ipv4-address;
+            type inet:domain-name;
+        }
+        description
+          "The host type represents either an IP address or a DNS
+           domain name.";
+    }
+
+    typedef percent {
+        type decimal64 {
+            fraction-digits 2;
+            range "0 .. 100";
+        }
+    }
+
+    typedef email {
+        type string {
+            pattern
+              '[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}';
+        }
+    }
+
+    list aci-site {
+        description
+          "This is an ACI Scalability Service Package.";
+
+        key "fabric host";
+
+        leaf fabric {
+            tailf:info "ACI fabric name";
+            type string;
+        }
+
+        uses ncs:service-data;
+        ncs:servicepoint acidc-servicepoint;
+
+        leaf host {
+            tailf:info "APIC IP Address or hostname";
+            type acidc:host;
+        }
+
+        container aci-scalability {
+            tailf:info "Define ACI fabric limits";
+
+            leaf l3-context {
+                tailf:info "VRF context limit for fabric.";
+                type uint16;
+                default 3000;
+            }
+        }
+
+        container aci-alarm {
+            tailf:info "Define ACI fabric alarm thresholds";
+
+            leaf l3-context {
+                tailf:info "VRF context alarm threshold for fabric.";
+                type acidc:percent;
+                default 80;
+            }
+
+            leaf email-address {
+                tailf:info "Email address to be used, if the threshold value is exceeded.";
+                type string;
+            }
+
+            leaf disable-alarm {
+                tailf:info "To disable alarm notification.";
+                type empty;
+            }
+        }
+
+        container capacity-dashboard {
+            description
+              "ACI capacity dashboard.";
+            tailf:cdb-oper {
+                tailf:persistent true;
+            }
+
+            leaf l3-context {
+                description
+                  "VRF usage ratio.";
+                config false;
+                type acidc:percent;
+            }
+        }
+    }
+}

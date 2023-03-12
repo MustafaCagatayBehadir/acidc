@@ -1,0 +1,26 @@
+name: acidc
+
+services:
+        
+  influxdb:
+    container_name: influx
+    image: influxdb:2.0
+    restart: always
+    ports:
+      - 8086:8086
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: adminacidc
+      DOCKER_INFLUXDB_INIT_ORG: btsgrp
+      DOCKER_INFLUXDB_INIT_BUCKET: btsgrp-bucket
+      DOCKER_INFLUXDB_INIT_RETENTION: 1w
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: 5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==
+    volumes:
+      - $PWD/data:/var/lib/influxdb2
+      - $PWD/config:/etc/influxdb2
+    networks:
+      - acidc-scalability
+        
+networks:
+  acidc-scalability: {}

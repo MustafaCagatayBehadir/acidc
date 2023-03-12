@@ -32,7 +32,7 @@ class AcidcCallbacks(Service):
             disable_alarm, vrf_alarm_threshold, vrf_usage_percent = acidc.aci_alarm.disable_alarm.exists(
             ), float(acidc.aci_alarm.l3_context), float(proplist[0][1])
             if not disable_alarm and vrf_usage_percent > vrf_alarm_threshold:
-                self.log.info(f"ACI {acidc.fabric} fabric icin VRF alarm thresholdu asilmistir.")
+                self.log.info(f"ACI {acidc.fabric} fabric icin VRF alarm threshold asilmistir.")
         return proplist
 
 

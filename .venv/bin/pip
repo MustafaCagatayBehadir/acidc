@@ -1,4 +1,4 @@
-#!/home/users/mbehadir/acidc/.venv/bin/python3
+#!/home/users/mbehadir/repos/rfs-nso-02-packages/acidc/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

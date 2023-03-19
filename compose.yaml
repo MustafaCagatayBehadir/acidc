@@ -3,24 +3,81 @@ name: acidc
 services:
         
   influxdb:
-    container_name: influx
+    container_name: acidc-influx
     image: influxdb:2.0
     restart: always
     ports:
       - 8086:8086
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: adminacidc
-      DOCKER_INFLUXDB_INIT_ORG: btsgrp
-      DOCKER_INFLUXDB_INIT_BUCKET: btsgrp-bucket
-      DOCKER_INFLUXDB_INIT_RETENTION: 1w
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: 5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_RETENTION}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
     volumes:
-      - $PWD/data:/var/lib/influxdb2
-      - $PWD/config:/etc/influxdb2
+      - $PWD/data/influx-data:/var/lib/influxdb2
     networks:
-      - acidc-scalability
+      - acidc-monitoring
+
+  postgres:
+    container_name: acidc-postgres
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ${POSTGRES_INITDB_DATABASE_DIRECTORY}:/docker-entrypoint-initdb.d
+    networks:
+      - acidc-monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 10s
+
+  grafana:
+    container_name: acidc-grafana
+    image: grafana/grafana-oss
+    ports:
+      - 3000:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+    volumes:
+      - ${GF_PROVISIONING_DIRECTORY}:/etc/grafana/provisioning
+      - type: bind
+        source: ${GF_VRF_DASHBOARD_PATH}
+        target: /var/lib/grafana/dashboards/BTS/vrf-dashboard.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - acidc-monitoring
+
+  discovery:
+    container_name: acidc-discovery
+    build:
+      context: ${ACIDC_ROOT}
+      dockerfile: ${ACIDC_ROOT}/modules/api/Dockerfile
+    environment:
+      NSO_HOST: ${NSO_HOST}
+      NSO_PORT: ${NSO_PORT}
+      NSO_USERNAME: ${NSO_USERNAME}
+      NSO_PASSWORD: ${NSO_PASSWORD}
+      NSO_FABRIC: ${NSO_FABRIC}
+    volumes:
+      - ${DISCOVERY_DATA_DIRECTORY}:/api/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - acidc-monitoring
         
 networks:
-  acidc-scalability: {}
+  acidc-monitoring: {}

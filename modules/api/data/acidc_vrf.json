@@ -1,0 +1,28 @@
+{
+  "acidc:vrf-config": [
+    {
+      "name": "BTS-VRF-001",
+      "description": "DESC001",
+      "enforcement": "enforced",
+      "vrf-type": "global"
+    },
+    {
+      "name": "BTS-VRF-002",
+      "description": "DESC002",
+      "enforcement": "unenforced",
+      "vrf-type": "global"
+    },
+    {
+      "name": "BTS-VRF-003",
+      "description": "DESC003",
+      "enforcement": "enforced",
+      "vrf-type": "private"
+    },
+    {
+      "name": "BTS-VRF-004",
+      "description": "DESC004",
+      "enforcement": "unenforced",
+      "vrf-type": "private"
+    }
+  ]
+}

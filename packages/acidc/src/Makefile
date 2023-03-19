@@ -4,7 +4,7 @@ all: fxs
 # Include standard NCS examples build definitions and rules
 include $(NCS_DIR)/src/ncs/build/include.ncs.mk
 
-SRC = $(wildcard yang/*.yang)
+SRC = $(wildcard yang/acidc.yang)
 DIRS = ../load-dir java/src/$(JDIR)/$(NS)
 FXS = $(SRC:yang/%.yang=../load-dir/%.fxs)
 
@@ -15,6 +15,8 @@ FXS = $(SRC:yang/%.yang=../load-dir/%.fxs)
 
 NCSCPATH   = $(YANGPATH:%=--yangpath %)
 YANGERPATH = $(YANGPATH:%=--path %)
+
+YANGPATH += ./yang
 
 fxs: $(DIRS) $(FXS)
 

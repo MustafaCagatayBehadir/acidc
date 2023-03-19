@@ -3,6 +3,7 @@ import ncs
 from ncs.application import Service
 
 from . import utils
+from . import acidc_vrf_subscriber
 from .modules.aci import Aci
 from .modules.influx import Influx
 
@@ -90,12 +91,17 @@ class Main(ncs.application.Application):
         self.log.info('Main RUNNING')
 
         # Acidc Registration
-        self.register_service('acidc-servicepoint', AcidcCallbacks)
+        # self.register_service('acidc-servicepoint', AcidcCallbacks)
+
+        # Acidc Vrf Subscriber
+        self.vrf_subscriber = acidc_vrf_subscriber.AcidcVrfSubscriber(self)
+        self.vrf_subscriber.start()
 
         # Install Crypto Keys
-        with ncs.maapi.Maapi() as m:
-            m.install_crypto_keys()
+        # with ncs.maapi.Maapi() as m:
+        #     m.install_crypto_keys()
 
     def teardown(self):
         """Teardown."""
         self.log.info('Main FINISHED')
+        self.vrf_subscriber.stop()

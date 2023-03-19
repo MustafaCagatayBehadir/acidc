@@ -2,4 +2,5 @@
 .vscode
 .load-dir
 ./data
-./config
+./modules/api/discovery/__pycache__/
+./modules/api/discovery/nso/__pycache__/

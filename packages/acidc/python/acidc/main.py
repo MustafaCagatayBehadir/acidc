@@ -1,6 +1,5 @@
 """ACI Scalability Monitoring Service."""
 import ncs
-from ncs.application import Service
 from . import acidc_vrf_subscriber
 
 

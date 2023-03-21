@@ -1,6 +1,7 @@
 """Helpers module for acidc service."""
 import _ncs
 from .modules.aci import Aci
+from .modules.influx import Influx
 
 
 def get_basic_authentication(root, auth_group):
@@ -57,7 +58,7 @@ def _create_aci_capacity_dashboard(root, acidc, log) -> float:
     return vrf_usage_percent
 
 
-def _create_influxdb_record(site, vrf_usage_percent, log) -> None:
+def create_influxdb_record(site, vrf_usage_percent, log) -> None:
     """Create influxdb record.
 
     Args:

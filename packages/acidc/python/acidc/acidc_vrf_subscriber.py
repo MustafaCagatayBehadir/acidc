@@ -2,7 +2,6 @@
 import ncs
 from ncs.cdb import Subscriber
 from . import utils
-from .modules.influx import Influx
 
 
 class AcidcVrfSubscriber(Subscriber):
@@ -70,7 +69,7 @@ class AcidcVrfSubscriber(Subscriber):
                 vrf_usage_percent = utils.get_percentage(
                     len(site.vrf_config), site.aci_scalability.l3_context)
                 site.capacity_dashboard.l3_context = vrf_usage_percent
-                utils._create_influxdb_record(
+                utils.create_influxdb_record(
                     site, vrf_usage_percent, self.log)
                 disable_alarm, vrf_alarm_threshold = site.aci_alarm.disable_alarm.exists(
                 ), float(site.aci_alarm.l3_context)

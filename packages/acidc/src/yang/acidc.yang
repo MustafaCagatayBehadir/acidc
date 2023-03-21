@@ -77,6 +77,7 @@ module acidc {
         container capacity-dashboard {
             description
               "ACI capacity dashboard.";
+            config false;
             tailf:cdb-oper {
                 tailf:persistent true;
             }
@@ -84,7 +85,6 @@ module acidc {
             leaf l3-context {
                 description
                   "VRF usage ratio.";
-                config false;
                 type acidc:percent;
             }
         }

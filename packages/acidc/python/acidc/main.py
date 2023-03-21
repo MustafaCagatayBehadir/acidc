@@ -90,16 +90,10 @@ class Main(ncs.application.Application):
         """Register service and actions."""
         self.log.info('Main RUNNING')
 
-        # Acidc Registration
-        # self.register_service('acidc-servicepoint', AcidcCallbacks)
-
         # Acidc Vrf Subscriber
         self.vrf_subscriber = acidc_vrf_subscriber.AcidcVrfSubscriber(self)
         self.vrf_subscriber.start()
 
-        # Install Crypto Keys
-        # with ncs.maapi.Maapi() as m:
-        #     m.install_crypto_keys()
 
     def teardown(self):
         """Teardown."""

@@ -70,32 +70,15 @@ class AcidcVrfSubscriber(Subscriber):
                 vrf_usage_percent = utils.get_percentage(
                     len(site.vrf_config), site.aci_scalability.l3_context)
                 site.capacity_dashboard.l3_context = vrf_usage_percent
-                _create_influxdb_record(site, vrf_usage_percent, self.log)
+                utils._create_influxdb_record(
+                    site, vrf_usage_percent, self.log)
+                disable_alarm, vrf_alarm_threshold = site.aci_alarm.disable_alarm.exists(
+                ), float(site.aci_alarm.l3_context)
+                if not disable_alarm and vrf_usage_percent > vrf_alarm_threshold:
+                    self.log.info(
+                        f"ACI {site.fabric} fabric icin VRF alarm threshold asilmistir.")
             t.apply()
 
     def should_post_iterate(self, state):
         """Decide post interate."""
         return state != []
-
-
-def _create_influxdb_record(site, vrf_usage_percent, log) -> None:
-    """Create influxdb record.
-
-    Args:
-        site: Acidc site node
-        vrf_usage_percent: Percentage of VRF usage
-        log: Log object(self.log)
-
-    Returns:
-        None
-    """
-    influx = Influx(protocol="http",
-                    host="10.56.60.15",
-                    port="8086",
-                    bucket="btsgrp-bucket",
-                    org="btsgrp",
-                    token="5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==")
-    influx.create_record("VRF_USAGE", site.fabric,
-                         "percent", vrf_usage_percent)
-    log.info(
-        f"InfluxDB record is created: (VRF_USAGE, {site.fabric}, percent, {vrf_usage_percent})")

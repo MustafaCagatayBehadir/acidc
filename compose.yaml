@@ -1,7 +1,7 @@
 name: acidc
 
 services:
-        
+
   influxdb:
     container_name: acidc-influx
     image: influxdb:2.0
@@ -20,6 +20,11 @@ services:
       - $PWD/data/influx-data:/var/lib/influxdb2
     networks:
       - acidc-monitoring
+    healthcheck:
+      test: "curl -f http://localhost:8086/ping"
+      interval: 3s
+      timeout: 10s
+      retries: 5
 
   postgres:
     container_name: acidc-postgres
@@ -35,7 +40,7 @@ services:
     networks:
       - acidc-monitoring
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}" ]
       interval: 30s
       timeout: 60s
       retries: 5
@@ -56,6 +61,8 @@ services:
         target: /var/lib/grafana/dashboards/BTS/vrf-dashboard.json
     depends_on:
       postgres:
+        condition: service_healthy
+      influxdb:
         condition: service_healthy
     networks:
       - acidc-monitoring
@@ -78,6 +85,6 @@ services:
         condition: service_healthy
     networks:
       - acidc-monitoring
-        
+
 networks:
   acidc-monitoring: {}

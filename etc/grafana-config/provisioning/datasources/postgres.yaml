@@ -1,6 +1,7 @@
 apiVersion: 1
 
 datasources:
+
   - name: Postgres
     type: postgres
     access: proxy
@@ -18,3 +19,15 @@ datasources:
       connMaxLifetime: 14400 
       postgresVersion: 931
       timescaledb: false
+
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://acidc-influx:8086
+    secureJsonData:
+      token: 5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==
+    jsonData:
+      version: Flux
+      organization: btsgrp
+      defaultBucket: btsgrp-bucket
+      tlsSkipVerify: true

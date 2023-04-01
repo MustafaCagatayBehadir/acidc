@@ -32,16 +32,11 @@ module acidc {
         description
           "This is an ACI Scalability Service Package.";
 
-        key "fabric host";
+        key "fabric";
 
         leaf fabric {
             tailf:info "ACI fabric name";
             type string;
-        }
-
-        leaf host {
-            tailf:info "APIC IP Address or hostname";
-            type acidc:host;
         }
 
         container aci-scalability {
@@ -97,6 +92,18 @@ module acidc {
             key "name";
 
             uses vrf-config-service;
+        }
+
+        tailf:action CreateInfluxData {
+            tailf:actionpoint AcidcCreateInfluxData;
+            output {
+                leaf result {
+                    type string;
+                }
+                leaf message {
+                    type string;
+                }
+            }
         }
     }
 }

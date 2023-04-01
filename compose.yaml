@@ -67,24 +67,24 @@ services:
     networks:
       - acidc-monitoring
 
-  discovery:
-    container_name: acidc-discovery
-    build:
-      context: ${ACIDC_ROOT}
-      dockerfile: ${ACIDC_ROOT}/modules/api/Dockerfile
-    environment:
-      NSO_HOST: ${NSO_HOST}
-      NSO_PORT: ${NSO_PORT}
-      NSO_USERNAME: ${NSO_USERNAME}
-      NSO_PASSWORD: ${NSO_PASSWORD}
-      NSO_FABRIC: ${NSO_FABRIC}
-    volumes:
-      - ${DISCOVERY_DATA_DIRECTORY}:/api/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - acidc-monitoring
+  # discovery:
+  #   container_name: acidc-discovery
+  #   build:
+  #     context: ${ACIDC_ROOT}
+  #     dockerfile: ${ACIDC_ROOT}/modules/api/Dockerfile
+  #   environment:
+  #     NSO_HOST: ${NSO_HOST}
+  #     NSO_PORT: ${NSO_PORT}
+  #     NSO_USERNAME: ${NSO_USERNAME}
+  #     NSO_PASSWORD: ${NSO_PASSWORD}
+  #     NSO_FABRIC: ${NSO_FABRIC}
+  #   volumes:
+  #     - ${DISCOVERY_DATA_DIRECTORY}:/api/data
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - acidc-monitoring
 
 networks:
   acidc-monitoring: {}

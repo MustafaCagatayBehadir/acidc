@@ -6,7 +6,7 @@ from . import acidc_exceptions
 
 
 class AcidcVrfTwoPhaseSubscriber(TwoPhaseSubscriber):
-    """This subscriber subscribes to vrfs in the '/aci-site/vrf-config'."""
+    """This subscriber subscribes to vrfs in the '/cisco-dc:dc-controller/cisco-dc:tenant-service'."""
 
     def init(self):
         """Specify monitored nodes in CDB.
@@ -14,7 +14,7 @@ class AcidcVrfTwoPhaseSubscriber(TwoPhaseSubscriber):
         Automatically registers all nodes that need to be
         monitored.
         """
-        self.register("/acidc:aci-site/acidc:vrf-config")
+        self.register("/cisco-dc:dc-controller/tenant-service/vrf-config")
 
     def pre_iterate(self):
         """Call just before iteration starts.
@@ -30,21 +30,22 @@ class AcidcVrfTwoPhaseSubscriber(TwoPhaseSubscriber):
         If an exception occurs during the invocation of prepare the transaction is aborted.
         """
         self.log.info(f"Keypath: {str(keypath)}, Operation: {operation}, Method: prepare")
-        # /acidc:aci-site{BTS-FABRIC-001 10.0.0.1}/vrf-config{BTS-VRF-004}
+        # /dc-controller{BTS-FABRIC-001}/tenant-service{BTS-TENANT-001}/vrf-config{BTS-VRF-001}
         if operation in (ncs.MOP_CREATED,) and str(keypath[1]) == "vrf-config":
-            state.append((operation, str(keypath)))
+            state.append(str(keypath[4][0]))
 
-        sites = set()
-        for entry in state:
-            kp = entry[1]
-            sites.add("/acidc:aci-site" + "{" + kp[kp.find('{') + 1:kp.find('}')] + "}")
+        self.log.info("State: ", state)
+        sites = set(state)
 
         with ncs.maapi.single_write_trans('admin', 'system', db=ncs.OPERATIONAL) as t:
             root = ncs.maagic.get_root(t)
-            for kp in sites:
-                site = ncs.maagic.cd(root, kp)
-                vrf_usage_percent = utils.get_percentage(
-                    len(site.vrf_config) + len(state), site.aci_scalability.l3_context)
+            for fabric in sites:
+                site = root.acidc__aci_site[fabric]
+                controller = root.cisco_dc__dc_controller[fabric]
+                vrf_count = 0
+                for tenant in controller.tenant_service:
+                    vrf_count += len(tenant.vrf_config)
+                vrf_usage_percent = utils.get_percentage(vrf_count + len(state), site.aci_scalability.l3_context)
                 disable_alarm, vrf_alarm_threshold = site.aci_alarm.disable_alarm.exists(), float(
                     site.aci_alarm.l3_context)
                 self.log.info(f"Method: prepare, Site: {site.fabric}, Current VRF Count: {len(site.vrf_config)}, " +
@@ -53,7 +54,7 @@ class AcidcVrfTwoPhaseSubscriber(TwoPhaseSubscriber):
                 if not disable_alarm and vrf_usage_percent > vrf_alarm_threshold:
                     raise acidc_exceptions.VrfThresholdError(
                         threshold=vrf_alarm_threshold,
-                        message=f"ACI {site.fabric} fabric icin VRF alarm threshold asilmistir.")
+                        message=f"ACI {site.fabric} fabric icin VRF alarm threshold asilmaktadir.")
         return ncs.ITER_RECURSE
 
     def cleanup(self, state):
@@ -83,7 +84,7 @@ class AcidcVrfSubscriber(Subscriber):
         Automatically registers all nodes that need to be
         monitored.
         """
-        self.register("/acidc:aci-site/acidc:vrf-config")
+        self.register("/cisco-dc:dc-controller/tenant-service/vrf-config")
         self.register("/acidc:aci-site/acidc:aci-scalability/acidc:l3-context")
 
     def pre_iterate(self):
@@ -101,13 +102,13 @@ class AcidcVrfSubscriber(Subscriber):
         with and filters data for post_iterate.
         """
         self.log.info(f"Keypath: {str(keypath)}, Operation: {operation}, Method: iterate")
-        # /acidc:aci-site{BTS-FABRIC-001 10.0.0.1}/vrf-config{BTS-VRF-004}
+        # /dc-controller{BTS-FABRIC-001}/tenant-service{BTS-TENANT-001}/vrf-config{BTS-VRF-001}
         if operation in (ncs.MOP_CREATED, ncs.MOP_DELETED) and str(keypath[1]) == "vrf-config":
-            state.append((operation, str(keypath)))
+            state.append(str(keypath[4][0]))
             return ncs.ITER_CONTINUE
         # kp: /acidc:aci-site{BTS-FABRIC-001 10.0.0.1}/aci-scalability/l3-context
         elif operation == ncs.MOP_VALUE_SET and str(keypath[0]) == "l3-context":
-            state.append((operation, str(keypath)))
+            state.append(str(keypath[2][0]))
             return ncs.ITER_CONTINUE
         return ncs.ITER_RECURSE
 
@@ -125,16 +126,18 @@ class AcidcVrfSubscriber(Subscriber):
         if state == []:
             return
 
-        sites = set()
-        for entry in state:
-            kp = entry[1]
-            sites.add("/acidc:aci-site" + "{" + kp[kp.find('{') + 1:kp.find('}')] + "}")
+        self.log.info("State: ", state)
+        sites = set(state)
 
         with ncs.maapi.single_write_trans('admin', 'system', db=ncs.OPERATIONAL) as t:
             root = ncs.maagic.get_root(t)
-            for kp in sites:
-                site = ncs.maagic.cd(root, kp)
-                vrf_usage_percent = utils.get_percentage(len(site.vrf_config), site.aci_scalability.l3_context)
+            for fabric in sites:
+                site = root.acidc__aci_site[fabric]
+                controller = root.cisco_dc__dc_controller[fabric]
+                vrf_count = 0
+                for tenant in controller.tenant_service:
+                    vrf_count += len(tenant.vrf_config)
+                vrf_usage_percent = utils.get_percentage(vrf_count, site.aci_scalability.l3_context)
                 site.capacity_dashboard.l3_context = vrf_usage_percent
                 utils.create_influxdb_record(site, vrf_usage_percent, self.log)
                 disable_alarm, vrf_alarm_threshold = site.aci_alarm.disable_alarm.exists(), float(

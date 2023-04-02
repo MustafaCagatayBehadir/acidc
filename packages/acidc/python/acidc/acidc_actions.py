@@ -1,0 +1,54 @@
+"""Acidc Actions Main Module."""
+import ncs
+import _ncs
+from ncs.dp import Action
+from . import utils
+from .discovery import models
+
+
+class CreateInfluxData(ncs.dp.Action):
+    """Acidc Influxdb action class."""
+
+    @Action.action
+    def cb_action(self, uinfo, name, kp, input, output, trans):
+        """Write vrf count to influxdb."""
+        self.log.info('Action triggered: ', name)
+        _ncs.dp.action_set_timeout(uinfo, 1800)
+        with ncs.maapi.single_write_trans('admin', 'system', db=ncs.OPERATIONAL) as t:
+            root = ncs.maagic.get_root(t)
+            for controller in root.cisco_dc__dc_controller:
+                site = root.acidc__aci_site[controller.fabric]
+                vrf_count = 0
+                for tenant in controller.tenant_service:
+                    vrf_count += len(tenant.vrf_config)
+                vrf_usage_percent = utils.get_percentage(vrf_count, site.aci_scalability.l3_context)
+                site.capacity_dashboard.l3_context = vrf_usage_percent
+                utils.create_influxdb_record(site, vrf_usage_percent, self.log)
+        output.result = "Success"
+        output.message = f"InfluxDB record is created: (VRF_USAGE, {site.fabric}, percent, {vrf_usage_percent})"
+
+
+class CreatePostgresData(ncs.dp.Action):
+    """Acidc postgresdb action class."""
+
+    @Action.action
+    def cb_action(self, uinfo, name, kp, input, output, trans):
+        """Write vrf parameters to postgresdb."""
+        self.log.info('Action triggered: ', name)
+        _ncs.dp.action_set_timeout(uinfo, 1800)
+        _ncs.dp.action_set_timeout(uinfo, 1800)
+        with ncs.maapi.single_write_trans('admin', 'system', db=ncs.OPERATIONAL) as t:
+            root = ncs.maagic.get_root(t)
+            for controller in root.cisco_dc__dc_controller:
+                vrf = list()
+                for tenant in controller.tenant_service:
+                    vrf.extend([{
+                        "vrf_name": vrf.name,
+                        "vrf_description": vrf.description if vrf.description else "N/A",
+                        "enforcement": vrf.enforcement.string,
+                        "vrf_type": vrf.vrf_type.string,
+                        "tenant": tenant.name
+                    } for vrf in tenant.vrf_config])
+                    utils.recreate_postgresdb_table(models.AcidcVrf, vrf, self.log)
+        output.result = "Success"
+        output.message = "Postgresdb tables are created."

@@ -22,6 +22,9 @@ class Main(ncs.application.Application):
         # Acidc create influx data action
         self.register_action('AcidcCreateInfluxData', acidc_actions.CreateInfluxData)
 
+        # Acidc create postgresdb data action
+        self.register_action('AcidcCreatePostgresData', acidc_actions.CreatePostgresData)
+
     def teardown(self):
         """Teardown."""
         self.log.info('Main FINISHED')

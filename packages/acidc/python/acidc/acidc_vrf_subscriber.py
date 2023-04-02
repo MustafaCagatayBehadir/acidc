@@ -3,6 +3,7 @@ import ncs
 from ncs.cdb import Subscriber, TwoPhaseSubscriber
 from . import utils
 from . import acidc_exceptions
+from .discovery import models
 
 
 class AcidcVrfTwoPhaseSubscriber(TwoPhaseSubscriber):
@@ -103,7 +104,7 @@ class AcidcVrfSubscriber(Subscriber):
         """
         self.log.info(f"Keypath: {str(keypath)}, Operation: {operation}, Method: iterate")
         # /dc-controller{BTS-FABRIC-001}/tenant-service{BTS-TENANT-001}/vrf-config{BTS-VRF-001}
-        if operation in (ncs.MOP_CREATED, ncs.MOP_DELETED) and str(keypath[1]) == "vrf-config":
+        if operation in (ncs.MOP_CREATED, ncs.MOP_DELETED, ncs.MOP_MODIFIED) and str(keypath[1]) == "vrf-config":
             state.append(str(keypath[4][0]))
             return ncs.ITER_CONTINUE
         # kp: /acidc:aci-site{BTS-FABRIC-001 10.0.0.1}/aci-scalability/l3-context
@@ -134,12 +135,19 @@ class AcidcVrfSubscriber(Subscriber):
             for fabric in sites:
                 site = root.acidc__aci_site[fabric]
                 controller = root.cisco_dc__dc_controller[fabric]
-                vrf_count = 0
+                vrf = list()
                 for tenant in controller.tenant_service:
-                    vrf_count += len(tenant.vrf_config)
-                vrf_usage_percent = utils.get_percentage(vrf_count, site.aci_scalability.l3_context)
+                    vrf.extend([{
+                        "vrf_name": vrf.name,
+                        "vrf_description": vrf.description if vrf.description else "N/A",
+                        "enforcement": vrf.enforcement.string,
+                        "vrf_type": vrf.vrf_type.string,
+                        "tenant": tenant.name
+                    } for vrf in tenant.vrf_config])
+                vrf_usage_percent = utils.get_percentage(len(vrf), site.aci_scalability.l3_context)
                 site.capacity_dashboard.l3_context = vrf_usage_percent
                 utils.create_influxdb_record(site, vrf_usage_percent, self.log)
+                utils.recreate_postgresdb_table(models.AcidcVrf, vrf, self.log)
                 disable_alarm, vrf_alarm_threshold = site.aci_alarm.disable_alarm.exists(), float(
                     site.aci_alarm.l3_context)
                 if not disable_alarm and vrf_usage_percent > vrf_alarm_threshold:

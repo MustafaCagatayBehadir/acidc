@@ -105,5 +105,17 @@ module acidc {
                 }
             }
         }
+
+        tailf:action CreatePostgresData {
+            tailf:actionpoint AcidcCreatePostgresData;
+            output {
+                leaf result {
+                    type string;
+                }
+                leaf message {
+                    type string;
+                }
+            }
+        }
     }
 }

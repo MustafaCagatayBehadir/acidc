@@ -212,6 +212,18 @@
                 "value": "VRF TYPE"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tenant"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "TENANT"
+              }
+            ]
           }
         ]
       },

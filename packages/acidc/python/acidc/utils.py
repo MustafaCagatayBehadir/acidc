@@ -1,4 +1,5 @@
 """Helpers module for acidc service."""
+from typing import List, Dict
 import _ncs
 from .modules.aci import Aci
 from .modules.influx import Influx
@@ -31,7 +32,7 @@ def get_percentage(count: int, limit: int) -> float:
     Returns:
         Percentage: count/limit
     """
-    return round(((count/limit) * 100), 2)
+    return round(((count / limit) * 100), 2)
 
 
 def _create_aci_capacity_dashboard(root, acidc, log) -> float:
@@ -46,13 +47,11 @@ def _create_aci_capacity_dashboard(root, acidc, log) -> float:
         Percentage of VRF usage
     """
     username, password = get_basic_authentication(root, "APIC")
-    aci = Aci(protocol="https", host=acidc.host, port="443",
-              username=username, password=password, cert_verify=False)
+    aci = Aci(protocol="https", host=acidc.host, port="443", username=username, password=password, cert_verify=False)
     aci.get_cookies()
     vrf_count = aci.get_vrf_count()
     log.info(f"{acidc.host} VRF count: ", vrf_count)
-    vrf_usage_percent = get_percentage(
-        vrf_count, acidc.aci_scalability.l3_context)
+    vrf_usage_percent = get_percentage(vrf_count, acidc.aci_scalability.l3_context)
     acidc.capacity_dashboard.l3_context = vrf_usage_percent
     log.info(f"{acidc.host} VRF usage: ", vrf_usage_percent)
     return vrf_usage_percent
@@ -75,7 +74,12 @@ def create_influxdb_record(site, vrf_usage_percent, log) -> None:
                     bucket="btsgrp-bucket",
                     org="btsgrp",
                     token="5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==")
-    influx.create_record("VRF_USAGE", site.fabric,
-                         "percent", vrf_usage_percent)
-    log.info(
-        f"InfluxDB record is created: (VRF_USAGE, {site.fabric}, percent, {vrf_usage_percent})")
+    influx.create_record("VRF_USAGE", site.fabric, "percent", vrf_usage_percent)
+    log.info(f"InfluxDB record is created: (VRF_USAGE, {site.fabric}, percent, {vrf_usage_percent})")
+
+
+def recreate_postgresdb_table(model, data: List[Dict], log) -> None:
+    """Delete the postgresdb table records and make bulk write operation postgresdb table with the data."""
+    model.clear_db()
+    model.write_db(data)
+    log.info(f"NSO database tabe {model.__table__.name} is recreated.")

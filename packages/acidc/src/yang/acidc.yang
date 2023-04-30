@@ -16,10 +16,6 @@ module acidc {
         revision-date "2023-03-19";
     }
 
-    include acidc-vrf-config {
-        revision-date "2023-03-19";
-    }
-
     description
       "ACI Scalability Package.";
 
@@ -36,7 +32,9 @@ module acidc {
 
         leaf fabric {
             tailf:info "ACI fabric name";
-            type string;
+            type leafref {
+                path /ncs:devices/ncs:device/ncs:name;
+            }
         }
 
         container aci-scalability {
@@ -82,16 +80,6 @@ module acidc {
                   "VRF usage ratio.";
                 type acidc:percent;
             }
-        }
-
-        list vrf-config {
-            tailf:info "Vrf config service for ACI configurations.";
-            description
-              "Vrf config service for ACI configurations.";
-
-            key "name";
-
-            uses vrf-config-service;
         }
 
         tailf:action CreateInfluxData {

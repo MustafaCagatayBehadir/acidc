@@ -22,26 +22,6 @@ submodule acidc-common {
           "Initial Revision.";
     }
 
-    typedef dc-string {
-        type string {
-            pattern
-              '[^\s]+' {
-                error-message
-                  "No space/s allowed.";
-            }
-        }
-    }
-
-    typedef host {
-        type union {
-            type inet:ipv4-address;
-            type inet:domain-name;
-        }
-        description
-          "The host type represents either an IP address or a DNS
-           domain name.";
-    }
-
     typedef percent {
         type decimal64 {
             fraction-digits 2;
@@ -53,28 +33,6 @@ submodule acidc-common {
         type string {
             pattern
               '[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}';
-        }
-    }
-
-    typedef vrf-enforcement {
-        type enumeration {
-            enum enforced {
-                tailf:info "Use contract enforcement for this VRF";
-            }
-            enum unenforced {
-                tailf:info "Do not use contract enforcement for this VRF";
-            }
-        }
-    }
-
-    typedef vrf-type {
-        type enumeration {
-            enum global {
-                tailf:info "VRF can be exposed to the Internet";
-            }
-            enum private {
-                tailf:info "VRF is private and may be extended over the WAN (E.g. MPLS L3VPN)";
-            }
         }
     }
 }

@@ -9,7 +9,6 @@ datasources:
     database: nso
     user: postgres
     isDefault: true
-    editable: true
     secureJsonData:
       password: 'postgres'
     jsonData:
@@ -19,15 +18,16 @@ datasources:
       connMaxLifetime: 14400 
       postgresVersion: 931
       timescaledb: false
+    editable: true
 
-  - name: InfluxDB
+  - name: InfluxDB_v2_InfluxQL
     type: influxdb
     access: proxy
-    url: http://acidc-influx:8086
-    secureJsonData:
-      token: 5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==
+    url: http://ctn-influxdb:8086
     jsonData:
-      version: Flux
-      organization: btsgrp
-      defaultBucket: btsgrp-bucket
-      tlsSkipVerify: true
+      dbName: 'acidc-bucket'
+      httpMode: GET
+      httpHeaderName1: 'Authorization'
+    secureJsonData:
+      httpHeaderValue1: 'Token 5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g=='
+    editable: true

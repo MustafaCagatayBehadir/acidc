@@ -2,9 +2,31 @@ name: acidc
 
 services:
 
+  postgres:
+    container_name: acidc-postgres
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - ${POSTGRES_INITDB_DATABASE_DIRECTORY}:/docker-entrypoint-initdb.d
+      - ${POSTGRES_DATA}:/var/lib/postgresql/data
+
+    networks:
+      - acidc-network
+
   influxdb:
-    container_name: acidc-influx
-    image: influxdb:2.0
+    container_name: acidc-influxdb
+    image: influxdb:2.7.1
     restart: always
     ports:
       - 8086:8086
@@ -16,35 +38,123 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
       DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_RETENTION}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
-    volumes:
-      - $PWD/data/influx-data:/var/lib/influxdb2
-    networks:
-      - acidc-monitoring
+      V1_AUTH_USERNAME: ${V1_AUTH_USERNAME}
+      V1_AUTH_PASSWORD: ${V1_AUTH_PASSWORD}
     healthcheck:
       test: "curl -f http://localhost:8086/ping"
       interval: 3s
       timeout: 10s
       retries: 5
-
-  postgres:
-    container_name: acidc-postgres
-    image: postgres
-    restart: always
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - ${POSTGRES_INITDB_DATABASE_DIRECTORY}:/docker-entrypoint-initdb.d
+      - ${INFLUXDB_DATA}:/var/lib/influxdb2
+      - ${INFLUXDB_SCRIPTS}:/docker-entrypoint-initdb.d
     networks:
-      - acidc-monitoring
+      - acidc-network
+
+  jaeger-collector:
+    container_name: acidc-jaeger-collector
+    image: jaegertracing/jaeger-collector
+    ports:
+      - 14269:14269
+      - 14268:14268
+      - 14267:14267
+      - 14250:14250
+      - 9411:9411
+      - 4317:4317
+      - 4318:4318
+    restart: on-failure
+    environment:
+      SPAN_STORAGE_TYPE: ${SPAN_STORAGE_TYPE}
+      COLLECTOR_OTLP_ENABLED: ${OTLP_ENABLED}
+    command:
+      [
+        "--es.server-urls=http://ctn-elasticsearch:9200",
+        "--es.num-shards=1",
+        "--es.num-replicas=0",
+        "--log-level=error"
+      ]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - acidc-network
+
+  jaeger-agent:
+    container_name: acidc-jaeger-agent
+    image: jaegertracing/jaeger-agent
+    hostname: jaeger-agent
+    command: [ "--reporter.grpc.host-port=ctn-jaeger-collector:14250" ]
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+    restart: on-failure
+    environment:
+      SPAN_STORAGE_TYPE: ${SPAN_STORAGE_TYPE}
+    depends_on:
+      - jaeger-collector
+    networks:
+      - acidc-network
+
+  jaeger-query:
+    container_name: acidc-jaeger-query
+    image: jaegertracing/jaeger-query
+    environment:
+      SPAN_STORAGE_TYPE: ${SPAN_STORAGE_TYPE}
+      no_proxy: ${no_proxy}
+    ports:
+      - 16686:16686
+      - 16687:16687
+    restart: on-failure
+    command:
+      [
+        "--es.server-urls=http://ctn-elasticsearch:9200",
+        "--span-storage.type=elasticsearch",
+        "--log-level=debug"
+      ]
+    depends_on:
+      - jaeger-agent
+    networks:
+      - acidc-network
+
+  elasticsearch:
+    container_name: acidc-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    ports:
+      - 9200:9200
+      - 9300:9300
+    restart: on-failure
+    environment:
+      cluster.name: ${CLUSTER_NAME}
+      discovery.type: ${DISCOVERY_TYPE}
+      http.host: ${HTTP_HOST}
+      transport.host: ${TRANSPORT_HOST}
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
+      xpack.security.enabled: ${SECURITY_ENABLED}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}" ]
+      test: curl -s http://ctn-elasticsearch:9200 >/dev/null || exit 1
       interval: 30s
-      timeout: 60s
-      retries: 5
-      start_period: 10s
+      timeout: 10s
+      retries: 50
+    volumes:
+      - ${ELASTIC_DATA}:/usr/share/elasticsearch/data
+    networks:
+      - acidc-network
+
+  kibana:
+    container_name: acidc-kibana
+    image: docker.elastic.co/kibana/kibana:7.17.9
+    restart: always
+    environment:
+      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
+    ports:
+      - 5601:5601
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - acidc-network
 
   grafana:
     container_name: acidc-grafana
@@ -65,25 +175,7 @@ services:
       influxdb:
         condition: service_healthy
     networks:
-      - acidc-monitoring
-  # discovery:
-  #   container_name: acidc-discovery
-  #   build:
-  #     context: ${ACIDC_ROOT}
-  #     dockerfile: ${ACIDC_ROOT}/modules/api/Dockerfile
-  #   environment:
-  #     NSO_HOST: ${NSO_HOST}
-  #     NSO_PORT: ${NSO_PORT}
-  #     NSO_USERNAME: ${NSO_USERNAME}
-  #     NSO_PASSWORD: ${NSO_PASSWORD}
-  #     NSO_FABRIC: ${NSO_FABRIC}
-  #   volumes:
-  #     - ${DISCOVERY_DATA_DIRECTORY}:/api/data
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - acidc-monitoring
+      - acidc-network
 
 networks:
-  acidc-monitoring: {}
+  acidc-network: {}

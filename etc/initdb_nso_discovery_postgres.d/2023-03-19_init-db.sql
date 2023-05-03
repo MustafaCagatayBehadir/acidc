@@ -3,6 +3,5 @@ CREATE TABLE acidcvrfs (
     vrf_name VARCHAR NOT NULL,
     vrf_description VARCHAR NOT NULL,
     enforcement VARCHAR NOT NULL,
-    vrf_type VARCHAR NOT NULL,
     tenant VARCHAR NOT NULL
 );

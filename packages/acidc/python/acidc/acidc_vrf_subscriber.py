@@ -137,20 +137,19 @@ class AcidcVrfSubscriber(Subscriber):
             root = ncs.maagic.get_root(t)
             for fabric in sites:
                 site = root.acidc__aci_site[fabric]
-                controller = root.cisco_dc__dc_controller[fabric]
-                vrf = list()
-                for tenant in controller.tenant_service:
-                    vrf.extend([{
+                vrf_info = list()
+                tenants = root.ncs__devices.device[fabric].config.cisco_apicdc__apic.fvTenant
+                for tenant in tenants:
+                    vrf_info.extend([{
                         "vrf_name": vrf.name,
-                        "vrf_description": vrf.description if vrf.description else "N/A",
-                        "enforcement": vrf.enforcement.string,
-                        "vrf_type": vrf.vrf_type.string,
+                        "vrf_description": vrf.descr if vrf.descr else "N/A",
+                        "enforcement": str(vrf.pcEnfPref),
                         "tenant": tenant.name
-                    } for vrf in tenant.vrf_config])
-                vrf_usage_percent = utils.get_percentage(len(vrf), site.aci_scalability.l3_context)
+                    } for vrf in tenant.fvCtx])
+                vrf_usage_percent = utils.get_percentage(len(vrf_info), site.aci_scalability.l3_context)
                 site.capacity_dashboard.l3_context = vrf_usage_percent
                 utils.create_influxdb_record(site, vrf_usage_percent, self.log)
-                utils.recreate_postgresdb_table(models.AcidcVrf, vrf, self.log)
+                utils.recreate_postgresdb_table(models.AcidcVrf, vrf_info, self.log)
                 disable_alarm, vrf_alarm_threshold = site.aci_alarm.disable_alarm.exists(), float(
                     site.aci_alarm.l3_context)
                 if not disable_alarm and vrf_usage_percent > vrf_alarm_threshold:

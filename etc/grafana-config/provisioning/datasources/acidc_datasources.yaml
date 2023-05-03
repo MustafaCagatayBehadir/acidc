@@ -23,7 +23,7 @@ datasources:
   - name: InfluxDB_v2_InfluxQL
     type: influxdb
     access: proxy
-    url: http://ctn-influxdb:8086
+    url: http://acidc-influxdb:8086
     jsonData:
       dbName: 'acidc-bucket'
       httpMode: GET

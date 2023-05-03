@@ -51,108 +51,25 @@ services:
     networks:
       - acidc-network
 
-  jaeger-collector:
-    container_name: acidc-jaeger-collector
-    image: jaegertracing/jaeger-collector
+  jaeger-all-in-one:
+    container_name: acidc-jaeger-all-in-one
+    image: jaegertracing/all-in-one:1.44
+    hostname: jaeger-all-in-one
     ports:
-      - 14269:14269
-      - 14268:14268
-      - 14267:14267
-      - 14250:14250
-      - 9411:9411
-      - 4317:4317
-      - 4318:4318
-    restart: on-failure
-    environment:
-      SPAN_STORAGE_TYPE: ${SPAN_STORAGE_TYPE}
-      COLLECTOR_OTLP_ENABLED: ${OTLP_ENABLED}
-    command:
-      [
-        "--es.server-urls=http://ctn-elasticsearch:9200",
-        "--es.num-shards=1",
-        "--es.num-replicas=0",
-        "--log-level=error"
-      ]
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    networks:
-      - acidc-network
-
-  jaeger-agent:
-    container_name: acidc-jaeger-agent
-    image: jaegertracing/jaeger-agent
-    hostname: jaeger-agent
-    command: [ "--reporter.grpc.host-port=ctn-jaeger-collector:14250" ]
-    ports:
-      - 5775:5775/udp
       - 6831:6831/udp
       - 6832:6832/udp
       - 5778:5778
-    restart: on-failure
-    environment:
-      SPAN_STORAGE_TYPE: ${SPAN_STORAGE_TYPE}
-    depends_on:
-      - jaeger-collector
-    networks:
-      - acidc-network
-
-  jaeger-query:
-    container_name: acidc-jaeger-query
-    image: jaegertracing/jaeger-query
-    environment:
-      SPAN_STORAGE_TYPE: ${SPAN_STORAGE_TYPE}
-      no_proxy: ${no_proxy}
-    ports:
       - 16686:16686
-      - 16687:16687
-    restart: on-failure
-    command:
-      [
-        "--es.server-urls=http://ctn-elasticsearch:9200",
-        "--span-storage.type=elasticsearch",
-        "--log-level=debug"
-      ]
-    depends_on:
-      - jaeger-agent
-    networks:
-      - acidc-network
-
-  elasticsearch:
-    container_name: acidc-elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
-    ports:
-      - 9200:9200
-      - 9300:9300
+      - 4317:4317
+      - 4318:4318
+      - 14250:14250
+      - 14268:14268
+      - 14269:14269
+      - 9411:9411
     restart: on-failure
     environment:
-      cluster.name: ${CLUSTER_NAME}
-      discovery.type: ${DISCOVERY_TYPE}
-      http.host: ${HTTP_HOST}
-      transport.host: ${TRANSPORT_HOST}
-      ES_JAVA_OPTS: ${ES_JAVA_OPTS}
-      xpack.security.enabled: ${SECURITY_ENABLED}
-    healthcheck:
-      test: curl -s http://ctn-elasticsearch:9200 >/dev/null || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 50
-    volumes:
-      - ${ELASTIC_DATA}:/usr/share/elasticsearch/data
-    networks:
-      - acidc-network
-
-  kibana:
-    container_name: acidc-kibana
-    image: docker.elastic.co/kibana/kibana:7.17.9
-    restart: always
-    environment:
-      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
-    ports:
-      - 5601:5601
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
+      COLLECTOR_OTLP_ENABLED: ${OTLP_ENABLED}
+      COLLECTOR_ZIPKIN_HOST_PORT: ${ZIPKIN_HOST_PORT}
     networks:
       - acidc-network
 
@@ -168,7 +85,7 @@ services:
       - ${GF_PROVISIONING_DIRECTORY}:/etc/grafana/provisioning
       - type: bind
         source: ${GF_VRF_DASHBOARD_PATH}
-        target: /var/lib/grafana/dashboards/BTS/vrf-dashboard.json
+        target: /var/lib/grafana/dashboards/acidc/vrf-dashboard.json
     depends_on:
       postgres:
         condition: service_healthy

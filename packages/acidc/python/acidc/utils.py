@@ -69,7 +69,7 @@ def create_influxdb_record(site, vrf_usage_percent, log) -> None:
         None
     """
     influx = Influx(protocol="http",
-                    host="10.56.60.15",
+                    host="10.1.182.3",
                     port="8086",
                     bucket="acidc-bucket",
                     org="acidc",

@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 from sqlalchemy import Column, String, Integer
 
-db_url = "postgresql://postgres:postgres@10.56.60.15:5432/nso"
+db_url = "postgresql://postgres:postgres@10.1.182.3:5432/nso"
 engine = create_engine(db_url, pool_size=5, pool_recycle=3600)
 
 session_factory = sessionmaker(bind=engine)
@@ -23,7 +23,6 @@ class AcidcVrf(Base):
     vrf_name = Column(String, nullable=False)
     vrf_description = Column(String)
     enforcement = Column(String, nullable=False)
-    vrf_type = Column(String, nullable=False)
     tenant = Column(String, nullable=False)
 
     @staticmethod

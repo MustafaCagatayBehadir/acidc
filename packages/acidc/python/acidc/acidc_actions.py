@@ -16,10 +16,10 @@ class CreateInfluxData(ncs.dp.Action):
         _ncs.dp.action_set_timeout(uinfo, 1800)
         with ncs.maapi.single_write_trans('admin', 'system', db=ncs.OPERATIONAL) as t:
             root = ncs.maagic.get_root(t)
-            for fabric in root.acidc__aci_site:
-                site = root.acidc__aci_site[fabric]
+            for _site in root.acidc__aci_site:
+                site = root.acidc__aci_site[_site.fabric]
                 vrf_count = 0
-                tenants = root.ncs__devices.device[fabric].config.cisco_apicdc__apic.fvTenant
+                tenants = root.ncs__devices.device[_site.fabric].config.cisco_apicdc__apic.fvTenant
                 for tenant in tenants:
                     vrf_count += len(tenant.fvCtx)
                 vrf_usage_percent = utils.get_percentage(vrf_count, site.aci_scalability.l3_context)
@@ -39,12 +39,12 @@ class CreatePostgresData(ncs.dp.Action):
         _ncs.dp.action_set_timeout(uinfo, 1800)
         with ncs.maapi.single_write_trans('admin', 'system', db=ncs.OPERATIONAL) as t:
             root = ncs.maagic.get_root(t)
-            for fabric in root.acidc__aci_site:
+            for _site in root.acidc__aci_site:
                 vrf_info = list()
-                tenants = root.ncs__devices.device[fabric].config.cisco_apicdc__apic.fvTenant
+                tenants = root.ncs__devices.device[_site.fabric].config.cisco_apicdc__apic.fvTenant
                 for tenant in tenants:
                     vrf_info.extend([{
-                        "fabric": fabric,
+                        "fabric": _site.fabric,
                         "tenant": tenant.name,
                         "vrf_name": vrf.name,
                         "vrf_description": vrf.descr if vrf.descr else "N/A",

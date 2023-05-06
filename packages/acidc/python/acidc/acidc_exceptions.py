@@ -11,6 +11,6 @@ class VrfThresholdError(Exception):
 
     def __init__(self, threshold, message):
         """Exception initialization method."""
-        self.salary = threshold
+        self.threshold = threshold
         self.message = message
         super().__init__(self.message)

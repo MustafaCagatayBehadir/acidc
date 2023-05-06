@@ -2,9 +2,31 @@ name: acidc
 
 services:
 
+  postgres:
+    container_name: acidc-postgres
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - ${POSTGRES_INITDB_DATABASE_DIRECTORY}:/docker-entrypoint-initdb.d
+      - ${POSTGRES_DATA}:/var/lib/postgresql/data
+
+    networks:
+      - acidc-network
+
   influxdb:
-    container_name: acidc-influx
-    image: influxdb:2.0
+    container_name: acidc-influxdb
+    image: influxdb:2.7.1
     restart: always
     ports:
       - 8086:8086
@@ -16,35 +38,49 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
       DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_RETENTION}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
-    volumes:
-      - $PWD/data/influx-data:/var/lib/influxdb2
-    networks:
-      - acidc-monitoring
+      V1_AUTH_USERNAME: ${V1_AUTH_USERNAME}
+      V1_AUTH_PASSWORD: ${V1_AUTH_PASSWORD}
     healthcheck:
       test: "curl -f http://localhost:8086/ping"
       interval: 3s
       timeout: 10s
       retries: 5
-
-  postgres:
-    container_name: acidc-postgres
-    image: postgres
-    restart: always
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - ${POSTGRES_INITDB_DATABASE_DIRECTORY}:/docker-entrypoint-initdb.d
+      - ${INFLUXDB_DATA}:/var/lib/influxdb2
+      # - ${INFLUXDB_SCRIPTS}:/docker-entrypoint-initdb.d
     networks:
-      - acidc-monitoring
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}" ]
-      interval: 30s
-      timeout: 60s
-      retries: 5
-      start_period: 10s
+      - acidc-network
+
+  telegraf:
+    container_name: acidc-telegraf
+    image: telegraf:1.26
+    volumes:
+      - ${TELEGRAF_CONFIG}:/etc/telegraf
+    depends_on:
+      influxdb:
+        condition: service_healthy
+
+  jaeger-all-in-one:
+    container_name: acidc-jaeger-all-in-one
+    image: jaegertracing/all-in-one:1.44
+    hostname: jaeger-all-in-one
+    ports:
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
+      - 14250:14250
+      - 14268:14268
+      - 14269:14269
+      - 9411:9411
+    restart: on-failure
+    environment:
+      COLLECTOR_OTLP_ENABLED: ${OTLP_ENABLED}
+      COLLECTOR_ZIPKIN_HOST_PORT: ${ZIPKIN_HOST_PORT}
+    networks:
+      - acidc-network
 
   grafana:
     container_name: acidc-grafana
@@ -58,32 +94,14 @@ services:
       - ${GF_PROVISIONING_DIRECTORY}:/etc/grafana/provisioning
       - type: bind
         source: ${GF_VRF_DASHBOARD_PATH}
-        target: /var/lib/grafana/dashboards/BTS/vrf-dashboard.json
+        target: /var/lib/grafana/dashboards/acidc/vrf-dashboard.json
     depends_on:
       postgres:
         condition: service_healthy
       influxdb:
         condition: service_healthy
     networks:
-      - acidc-monitoring
-  # discovery:
-  #   container_name: acidc-discovery
-  #   build:
-  #     context: ${ACIDC_ROOT}
-  #     dockerfile: ${ACIDC_ROOT}/modules/api/Dockerfile
-  #   environment:
-  #     NSO_HOST: ${NSO_HOST}
-  #     NSO_PORT: ${NSO_PORT}
-  #     NSO_USERNAME: ${NSO_USERNAME}
-  #     NSO_PASSWORD: ${NSO_PASSWORD}
-  #     NSO_FABRIC: ${NSO_FABRIC}
-  #   volumes:
-  #     - ${DISCOVERY_DATA_DIRECTORY}:/api/data
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - acidc-monitoring
+      - acidc-network
 
 networks:
-  acidc-monitoring: {}
+  acidc-network: {}

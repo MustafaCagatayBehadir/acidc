@@ -1,6 +1,7 @@
 .venv
 .vscode
 .load-dir
+packages/acidc/load-dir
 data
 modules/api/discovery/__pycache__/
 modules/api/discovery/nso/__pycache__/

@@ -2,7 +2,7 @@
 from typing import List, Dict
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, text
 
 db_url = "postgresql://postgres:postgres@10.1.182.3:5432/nso"
 engine = create_engine(db_url, pool_size=5, pool_recycle=3600)
@@ -41,5 +41,6 @@ class AcidcVrf(Base):
             None
         """
         with Session() as session:
+            session.execute(text(f'ALTER SEQUENCE {AcidcVrf.__tablename__}_id_seq RESTART WITH 1'))
             session.bulk_insert_mappings(AcidcVrf, acidc_vrf)
             session.commit()

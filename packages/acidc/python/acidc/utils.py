@@ -82,4 +82,4 @@ def recreate_postgresdb_table(model, data: List[Dict], log) -> None:
     """Delete the postgresdb table records and make bulk write operation postgresdb table with the data."""
     model.clear_db()
     model.write_db(data)
-    log.info(f"NSO database tabe {model.__table__.name} is recreated.")
+    log.info(f"NSO database table {model.__table__.name} is recreated.")

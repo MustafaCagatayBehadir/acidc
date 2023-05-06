@@ -20,10 +20,11 @@ class AcidcVrf(Base):
     __tablename__ = "acidcvrfs"
 
     id = Column(Integer, primary_key=True)
+    fabric = Column(String, nullable=False)
+    tenant = Column(String, nullable=False)
     vrf_name = Column(String, nullable=False)
     vrf_description = Column(String)
     enforcement = Column(String, nullable=False)
-    tenant = Column(String, nullable=False)
 
     @staticmethod
     def clear_db() -> None:

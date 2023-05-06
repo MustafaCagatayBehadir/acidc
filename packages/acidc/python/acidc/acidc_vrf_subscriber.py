@@ -4,7 +4,7 @@ import ncs
 from ncs.cdb import Subscriber, TwoPhaseSubscriber
 from . import utils
 from . import acidc_exceptions
-from .discovery import models
+from .modules import models
 
 
 class AcidcVrfTwoPhaseSubscriber(TwoPhaseSubscriber):
@@ -144,7 +144,8 @@ class AcidcVrfSubscriber(Subscriber):
                         "vrf_name": vrf.name,
                         "vrf_description": vrf.descr if vrf.descr else "N/A",
                         "enforcement": str(vrf.pcEnfPref),
-                        "tenant": tenant.name
+                        "tenant": tenant.name,
+                        "fabric": fabric
                     } for vrf in tenant.fvCtx])
                 vrf_usage_percent = utils.get_percentage(len(vrf_info), site.aci_scalability.l3_context)
                 site.capacity_dashboard.l3_context = vrf_usage_percent

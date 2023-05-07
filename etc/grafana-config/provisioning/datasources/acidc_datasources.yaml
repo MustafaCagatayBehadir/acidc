@@ -5,7 +5,7 @@ datasources:
   - name: Postgres
     type: postgres
     access: proxy
-    url: acidc-postgres:5432
+    url: postgres:5432
     database: nso
     user: postgres
     isDefault: true
@@ -23,11 +23,23 @@ datasources:
   - name: InfluxDB_v2_InfluxQL
     type: influxdb
     access: proxy
-    url: http://acidc-influxdb:8086
+    url: http://acidc-influxdbv2:8086
     jsonData:
-      dbName: 'acidc-bucket'
+      dbName: 'nso'
       httpMode: GET
       httpHeaderName1: 'Authorization'
     secureJsonData:
       httpHeaderValue1: 'Token 5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g=='
     editable: true
+
+  # - name: InfluxDB_v1
+  #   type: influxdb
+  #   access: proxy
+  #   user: admin
+  #   url: http://10.1.82.3:8087
+  #   jsonData:
+  #     dbName: 'nso'
+  #     httpMode: GET
+  #   secureJsonData:
+  #     password: admin_influxdb
+  #   editable: true

@@ -24,20 +24,20 @@ services:
     networks:
       - acidc-network
 
-  influxdb:
-    container_name: acidc-influxdb
+  influxdbv2:
+    container_name: acidc-influxdbv2
     image: influxdb:2.7.1
     restart: always
     ports:
       - 8086:8086
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
-      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
-      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
-      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_RETENTION}
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDBv2_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDBv2_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDBv2_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDBv2_BUCKET}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDBv2_RETENTION}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDBv2_TOKEN}
       V1_AUTH_USERNAME: ${V1_AUTH_USERNAME}
       V1_AUTH_PASSWORD: ${V1_AUTH_PASSWORD}
     healthcheck:
@@ -46,10 +46,53 @@ services:
       timeout: 10s
       retries: 5
     volumes:
-      - ${INFLUXDB_DATA}:/var/lib/influxdb2
-      - ${INFLUXDB_SCRIPTS}:/docker-entrypoint-initdb.d
+      - ${INFLUXDBv2_DATA}:/var/lib/influxdb2
+      - ${INFLUXDBv2_INIT_CONFIG}:/etc/influxdb2
+      - ${INFLUXDBv2_SCRIPTS}:/docker-entrypoint-initdb.d
     networks:
       - acidc-network
+
+  # influxdbv1:
+  #   container_name: acidc-influxdbv1
+  #   image: influxdb:1.8
+  #   restart: always
+  #   ports:
+  #     - 8087:8086
+  #   environment:
+  #     INFLUXDB_ADMIN_ENABLED: true
+  #     INFLUXDB_ADMIN_USER: ${INFLUXDBv1_USERNAME}
+  #     INFLUXDB_ADMIN_PASSWORD: ${INFLUXDBv1_PASSWORD}
+  #     INFLUXDB_DB: ${INFLUXDBv1_DB}
+  #     INFLUXDB_USER: ${V1_AUTH_USERNAME}
+  #     INFLUXDB_USER_PASSWORD: ${V1_AUTH_PASSWORD}
+  #   healthcheck:
+  #     test: "curl -f http://localhost:8086/ping"
+  #     interval: 3s
+  #     timeout: 10s
+  #     retries: 5
+  #   volumes:
+  #     - ${INFLUXDBv1_DATA}:/var/lib/influxdb
+  #     - ${INFLUXDBv1_INIT_CONFIG}:/etc/influxdb
+  #   networks:
+  #     - acidc-network
+
+  # chronograf:
+  #   container_name: acidc-chronograf
+  #   image: chronograf:latest
+  #   restart: always
+  #   ports:
+  #     - 8888:8888
+  #   environment:
+  #     - INFLUXDB_URL=${INFLUXDB_URL}
+  #     - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
+  #     - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+  #   depends_on:
+  #     influxdbv1:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ${CHRONOGRAF_DATA}:/var/lib/chronograf
+  #   networks:
+  #     - acidc-network
 
   telegraf:
     container_name: acidc-telegraf
@@ -57,8 +100,10 @@ services:
     volumes:
       - ${TELEGRAF_CONFIG}:/etc/telegraf
     depends_on:
-      influxdb:
+      influxdbv2:
         condition: service_healthy
+    networks:
+      - acidc-network
 
   jaeger-all-in-one:
     container_name: acidc-jaeger-all-in-one
@@ -98,7 +143,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      influxdb:
+      influxdbv2:
         condition: service_healthy
     networks:
       - acidc-network

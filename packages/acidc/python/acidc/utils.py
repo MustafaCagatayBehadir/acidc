@@ -71,7 +71,7 @@ def create_influxdb_record(site, vrf_usage_percent, log) -> None:
     influx = Influx(protocol="http",
                     host="10.1.182.3",
                     port="8086",
-                    bucket="acidc-bucket",
+                    bucket="nso",
                     org="acidc",
                     token="5H82UVclrkUZvk5I19lrnHNQ2qYeJZIW-kCH0Vc0travRifpZNWhgtLUYHuL9cMefsM_uXZV6ymKfFsOqMK84g==")
     influx.create_record("VRF_USAGE", site.fabric, "percent", vrf_usage_percent)

@@ -198,7 +198,7 @@
             "type": "influxdb",
             "uid": "P3C147723CB20F3EF"
           },
-          "query": "SELECT \"percent\" FROM \"VRF_USAGE\" WHERE $timeFilter",
+          "query": "SELECT \"percent\" FROM \"vrf-usage\" WHERE $timeFilter",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series"
@@ -397,7 +397,7 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],

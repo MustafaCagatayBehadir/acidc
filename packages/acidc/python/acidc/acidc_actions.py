@@ -26,7 +26,7 @@ class CreateInfluxData(ncs.dp.Action):
                 site.capacity_dashboard.l3_context = vrf_usage_percent
                 utils.create_influxdb_record(site, vrf_usage_percent, self.log)
         output.result = "Success"
-        output.message = f"InfluxDB record is created: (VRF_USAGE, {site.fabric}, percent, {vrf_usage_percent})"
+        output.message = f"InfluxDB record is created: (vrf-usage, {site.fabric}, percent, {vrf_usage_percent})"
 
 
 class CreatePostgresData(ncs.dp.Action):

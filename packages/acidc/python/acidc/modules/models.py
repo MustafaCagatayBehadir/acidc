@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 from sqlalchemy import Column, String, Integer, text
 
-db_url = "postgresql://postgres:postgres@10.1.182.3:5432/nso"
+db_url = "postgresql://postgres:postgres@10.1.182.6:5432/nso"
 engine = create_engine(db_url, pool_size=5, pool_recycle=3600)
 
 session_factory = sessionmaker(bind=engine)
